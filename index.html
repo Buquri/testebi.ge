@@ -329,10 +329,9 @@
         </div>
     </div>
 
-<!-- ტესტების მონაცემების შემოსვლა -->
+<!-- ტესტების მონაცემების ჩატვირთვა -->
 <script src="questions.js"></script>
 
-<!-- საიტის ფუნქციონალის ლოგიკა -->
 <script>
     let currentTopicKey = null;
     let activeQuestions = [];
@@ -361,10 +360,18 @@
         const topicList = document.getElementById('topicList');
         topicList.innerHTML = '';
 
-        for (let key in quizDatabase) {
+        const db = window.quizDatabase;
+
+        if (!db || Object.keys(db).length === 0) {
+            topicList.innerHTML = '<p style="color: red; padding: 10px;">⚠️ questions.js ფაილი ვერ მოიძებნა ან ცარიელია!</p>';
+            document.getElementById('examsModal').classList.remove('hidden');
+            return;
+        }
+
+        for (let key in db) {
             const btn = document.createElement('button');
             btn.className = 'topic-btn';
-            btn.innerText = quizDatabase[key].title;
+            btn.innerText = db[key].title;
             btn.onclick = () => selectTopic(key);
             topicList.appendChild(btn);
         }
@@ -390,7 +397,7 @@
         secondsElapsed = 0;
         startTimer();
 
-        const rawQuestions = quizDatabase[currentTopicKey].questions;
+        const rawQuestions = window.quizDatabase[currentTopicKey].questions;
         const shuffledQuestions = shuffleArray(rawQuestions);
 
         activeQuestions = shuffledQuestions.map((q, idx) => {

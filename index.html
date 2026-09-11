@@ -124,7 +124,7 @@
             font-weight: 600;
         }
 
-        /* სტატუსის ფერები მყისიერი რეჟიმისთვის */
+        /* სტატუსის ფერები */
         .option-btn.correct {
             background-color: #dcfce7 !important;
             border-color: #22c55e !important;
@@ -232,6 +232,20 @@
             cursor: pointer;
         }
 
+        .btn-outline {
+            background-color: transparent;
+            color: #2563eb;
+            border: 2px solid #2563eb;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-outline:hover {
+            background-color: #eff6ff;
+        }
+
         .topic-list {
             display: flex;
             flex-direction: column;
@@ -322,7 +336,10 @@
         <div class="modal-content">
             <h2 class="modal-title">ტესტის შედეგები 📊</h2>
             <p class="modal-text" id="resultsText"></p>
-            <button class="btn-primary" onclick="closeResultsModal()">დახურვა</button>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="reviewQuiz()">🔍 ტესტის გადახედვა</button>
+                <button class="btn-primary" onclick="closeResultsModal()">ახალი ტესტი</button>
+            </div>
         </div>
     </div>
 
@@ -1097,6 +1114,47 @@
 
         document.getElementById('resultsText').innerHTML = resultsText;
         document.getElementById('resultsModal').classList.remove('hidden');
+    }
+
+    /* ტესტის პასუხების გადახედვა დასრულების შემდეგ */
+    function reviewQuiz() {
+        document.getElementById('resultsModal').classList.add('hidden');
+
+        activeQuestions.forEach((qData, qIndex) => {
+            const optionsContainer = document.getElementById(`options-${qIndex}`);
+            const statusElement = document.getElementById(`status-${qIndex}`);
+            const buttons = optionsContainer.querySelectorAll('.option-btn');
+            const userChoice = userAnswers[qIndex];
+
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('selected');
+
+                const btnOpt = btn.getAttribute('data-opt');
+
+                // სწორი პასუხის მწვანედ მონიშვნა
+                if (btnOpt === qData.correct) {
+                    btn.classList.add('correct');
+                }
+
+                // თუ მომხმარებელმა არასწორი აირჩია — წითლად მონიშვნა
+                if (userChoice && userChoice === btnOpt && userChoice !== qData.correct) {
+                    btn.classList.add('wrong');
+                }
+            });
+
+            // სტატუსის ტექსტი
+            if (userChoice === qData.correct) {
+                statusElement.innerText = "სწორია! ✨";
+                statusElement.className = "status-message correct-text";
+            } else {
+                statusElement.innerText = userChoice ? "არასწორია! ❌" : "უპასუხო ⚠️";
+                statusElement.className = "status-message wrong-text";
+            }
+        });
+
+        // აინTopic პირველ კითხვაზე დაბრუნება
+        document.getElementById('quizContainer').scrollTop = 0;
     }
 
     function closeResultsModal() {

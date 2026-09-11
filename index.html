@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ტესტების პლატფორმა</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            overflow: hidden;
+        }
+
+        /* ზედა ნავიგაციის ზოლი */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .btn-exams {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-exams:hover {
+            background-color: #1d4ed8;
+        }
+
+        .timer-display {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #475569;
+            background: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        /* Fullscreen Snap Scroll კონტეინერი */
+        .quiz-container {
+            height: calc(100vh - 60px);
+            margin-top: 60px;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+        }
+
+        .question-card {
+            height: calc(100vh - 60px);
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card-content {
+            background: #ffffff;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            max-width: 680px;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+        }
+
+        .question-title {
+            font-size: 1.25rem;
+            margin-bottom: 24px;
+            color: #0f172a;
+            line-height: 1.5;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            color: #334155;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .option-btn.selected {
+            border-color: #2563eb;
+            background-color: #dbeafe;
+            font-weight: 600;
+        }
+
+        /* სტატუსის ფერები მყისიერი რეჟიმისთვის */
+        .option-btn.correct {
+            background-color: #dcfce7 !important;
+            border-color: #22c55e !important;
+            color: #14532d !important;
+            font-weight: 600;
+        }
+
+        .option-btn.wrong {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+            color: #7f1d1d !important;
+        }
+
+        .status-message {
+            margin-top: 16px;
+            font-weight: 600;
+            font-size: 1rem;
+            min-height: 24px;
+        }
+        .status-message.correct-text { color: #16a34a; }
+        .status-message.wrong-text { color: #dc2626; }
+
+        .finish-btn-container {
+            text-align: center;
+            padding: 40px 0;
+            scroll-snap-align: start;
+        }
+
+        .btn-submit {
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .btn-submit:hover {
+            background-color: #15803d;
+        }
+
+        /* მოდალური ფანჯრები */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+            color: #0f172a;
+        }
+
+        .modal-text {
+            color: #475569;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .topic-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .topic-btn {
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .topic-btn:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ზედა პანელი -->
+    <div class="top-bar">
+        <button class="btn-exams" onclick="openExamsModal()">📚 გამოცდები</button>
+        <div class="timer-display" id="timerDisplay">დრო: 00:00</div>
+    </div>
+
+    <!-- ტესტების კონტეინერი -->
+    <div class="quiz-container" id="quizContainer">
+        <!-- კითხვები ჩაიტვირთება აქ -->
+    </div>
+
+    <!-- 1. მისალმების მოდალი -->
+    <div class="modal-overlay" id="welcomeModal">
+        <div class="modal-content">
+            <h2 class="modal-title">მოგესალმებით! 👋</h2>
+            <p class="modal-text">ეს არის სატესტო პლატფორმა, სადაც შეგიძლიათ შეამოწმოთ თქვენი ცოდნა სხვადასხვა თემებში. აირჩიეთ სასურველი გამოცდა და დაიწყეთ ტესტირება.</p>
+            <button class="btn-primary" onclick="closeWelcomeModal()">გაგება / დაწყება</button>
+        </div>
+    </div>
+
+    <!-- 2. თემების/გამოცდების მოდალი -->
+    <div class="modal-overlay hidden" id="examsModal">
+        <div class="modal-content">
+            <h2 class="modal-title">აირჩიეთ თემა</h2>
+            <div class="topic-list" id="topicList">
+                <!-- თემები ჩაიტვირთება JS-ით -->
+            </div>
+            <button class="btn-secondary" onclick="closeExamsModal()">დახურვა</button>
+        </div>
+    </div>
+
+    <!-- 3. რეჟიმის არჩევის მოდალი -->
+    <div class="modal-overlay hidden" id="modeModal">
+        <div class="modal-content">
+            <h2 class="modal-title">აირჩიეთ ტესტირების რეჟიმი</h2>
+            <p class="modal-text">გსურთ თუ არა პასუხების მომენტალურად ჩვენება არჩევისთანავე?</p>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="startQuiz(true)">დიახ (მყისიერი ჩვენება)</button>
+                <button class="btn-secondary" onclick="startQuiz(false)">არა (ჩვენება ბოლოს, შეცვლა დასაშვებია)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. შედეგების მოდალი -->
+    <div class="modal-overlay hidden" id="resultsModal">
+        <div class="modal-content">
+            <h2 class="modal-title">ტესტის შედეგები 📊</h2>
+            <p class="modal-text" id="resultsText"></p>
+            <button class="btn-primary" onclick="closeResultsModal()">დახურვა</button>
+        </div>
+    </div>
+
+<script>
+    /* ==========================================================================
+       =======================  ტესტების მონაცემთა ბაზა  =======================
+       ========================================================================== */
+    // ტექსტში ნუმერაციას ნუ მიუთითებ - საიტი თავად მიაწერს (ა), (ბ), (გ)...
+    const quizDatabase = {
+        "javascript": {
+            title: "JavaScript-ის საფუძვლები",
+            questions: [
+                {
+                    question: "რას აბრუნებს გამოსახულება typeof NaN JavaScript-ში?",
+                    options: ["number", "NaN", "undefined", "object"],
+                    correct: "number"
+                },
+                {
+                    question: "რომელი მეთოდი გამოიყენება მასივში ელემენტის ბოლოში დასამატებლად?",
+                    options: ["push()", "pop()", "shift()", "unshift()"],
+                    correct: "push()"
+                },
+                {
+                    question: "რომელი ოპერატორი ამოწმებს ტოლობას ტიპების შედარებით (Strict Equality)?",
+                    options: ["===", "==", "=", "=="],
+                    correct: "==="
+                }
+            ]
+        },
+        "geography": {
+            title: "გეოგრაფია",
+            questions: [
+                {
+                    question: "რომელია მსოფლიოში ყველაზე დიდი ოკეანე?",
+                    options: ["წყნარი ოკეანე", "ატლანტის ოკეანე", "ინდოეთის ოკეანე", "ჩრდილოეთ ყინულოვანი"],
+                    correct: "წყნარი ოკეანე"
+                },
+                {
+                    question: "რომელია საქართველოს უმაღლესი მწვერვალი?",
+                    options: ["შხარა", "ყაზბეგი", "თეთნულდი", "უსბა"],
+                    correct: "შხარა"
+                }
+            ]
+        }
+    };
+
+    /* ==========================================================================
+       =========================  ლოგიკა და ფუნქციები  =========================
+       ========================================================================== */
+
+    let currentTopicKey = null;
+    let activeQuestions = [];
+    let isInstantMode = false;
+    let userAnswers = {};
+    let timerInterval = null;
+    let secondsElapsed = 0;
+
+    // ქართული ანბანი სავარაუდო პასუხების ინდექსაციისთვის
+    const geoAlphabet = ["ა", "ბ", "გ", "დ", "ე", "ვ", "ზ", "თ", "ი", "კ"];
+
+    function shuffleArray(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function closeWelcomeModal() {
+        document.getElementById('welcomeModal').classList.add('hidden');
+        openExamsModal();
+    }
+
+    function openExamsModal() {
+        const topicList = document.getElementById('topicList');
+        topicList.innerHTML = '';
+
+        for (let key in quizDatabase) {
+            const btn = document.createElement('button');
+            btn.className = 'topic-btn';
+            btn.innerText = quizDatabase[key].title;
+            btn.onclick = () => selectTopic(key);
+            topicList.appendChild(btn);
+        }
+
+        document.getElementById('examsModal').classList.remove('hidden');
+    }
+
+    function closeExamsModal() {
+        document.getElementById('examsModal').classList.add('hidden');
+    }
+
+    function selectTopic(key) {
+        currentTopicKey = key;
+        closeExamsModal();
+        document.getElementById('modeModal').classList.remove('hidden');
+    }
+
+    function startQuiz(instant) {
+        isInstantMode = instant;
+        document.getElementById('modeModal').classList.add('hidden');
+        
+        userAnswers = {};
+        secondsElapsed = 0;
+        startTimer();
+
+        const rawQuestions = quizDatabase[currentTopicKey].questions;
+        const shuffledQuestions = shuffleArray(rawQuestions);
+
+        activeQuestions = shuffledQuestions.map((q, idx) => {
+            return {
+                id: idx,
+                question: q.question,
+                options: shuffleArray(q.options),
+                correct: q.correct
+            };
+        });
+
+        renderQuiz();
+    }
+
+    function renderQuiz() {
+        const container = document.getElementById('quizContainer');
+        container.innerHTML = '';
+
+        activeQuestions.forEach((q, qIndex) => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+
+            let optionsHTML = '';
+            q.options.forEach((opt, optIdx) => {
+                // ავტომატურად ვამატებთ ქართულ ასოს (ა, ბ, გ, დ...)
+                const letterPrefix = geoAlphabet[optIdx] ? `${geoAlphabet[optIdx]}) ` : '';
+                
+                optionsHTML += `
+                    <button class="option-btn" 
+                            data-q="${qIndex}" 
+                            data-opt="${opt.replace(/"/g, '&quot;')}"
+                            onclick="handleOptionClick(${qIndex}, '${opt.replace(/'/g, "\\'")}', this)">
+                        <strong>${letterPrefix}</strong>${opt}
+                    </button>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="card-content">
+                    <h2 class="question-title">${qIndex + 1}. ${q.question}</h2>
+                    <div class="options-container" id="options-${qIndex}">
+                        ${optionsHTML}
+                    </div>
+                    <div class="status-message" id="status-${qIndex}"></div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        const finishDiv = document.createElement('div');
+        finishDiv.className = 'finish-btn-container';
+        finishDiv.innerHTML = `<button class="btn-submit" onclick="finishQuiz()">ტესტის დასრულება 🏁</button>`;
+        container.appendChild(finishDiv);
+    }
+
+    function handleOptionClick(qIndex, selectedOpt, btnElement) {
+        const qData = activeQuestions[qIndex];
+        const optionsContainer = document.getElementById(`options-${qIndex}`);
+        const statusElement = document.getElementById(`status-${qIndex}`);
+        const buttons = optionsContainer.querySelectorAll('.option-btn');
+
+        userAnswers[qIndex] = selectedOpt;
+
+        if (isInstantMode) {
+            buttons.forEach(btn => btn.disabled = true);
+
+            if (selectedOpt === qData.correct) {
+                btnElement.classList.add('correct');
+                statusElement.innerText = "სწორია! ✨";
+                statusElement.classList.add('correct-text');
+            } else {
+                btnElement.classList.add('wrong');
+                buttons.forEach(btn => {
+                    if (btn.getAttribute('data-opt') === qData.correct) {
+                        btn.classList.add('correct');
+                    }
+                });
+                statusElement.innerText = "არასწორია! ❌";
+                statusElement.classList.add('wrong-text');
+            }
+        } else {
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            btnElement.classList.add('selected');
+        }
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        const timerDisplay = document.getElementById('timerDisplay');
+        timerInterval = setInterval(() => {
+            secondsElapsed++;
+            const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+            const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+            timerDisplay.innerText = `დრო: ${mins}:${secs}`;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+
+    function finishQuiz() {
+        stopTimer();
+
+        let correctCount = 0;
+        let totalCount = activeQuestions.length;
+
+        activeQuestions.forEach((q, idx) => {
+            if (userAnswers[idx] === q.correct) {
+                correctCount++;
+            }
+        });
+
+        let wrongCount = totalCount - correctCount;
+        const mins = Math.floor(secondsElapsed / 60);
+        const secs = secondsElapsed % 60;
+        const timeFormatted = mins > 0 ? `${mins} წუთი და ${secs} წამი` : `${secs} წამი`;
+
+        const resultsText = `
+            <strong>დახარჯული დრო:</strong> ${timeFormatted}<br><br>
+            ✅ <strong>სწორი პასუხი:</strong> ${correctCount}<br>
+            ❌ <strong>არასწორი/უპასუხო:</strong> ${wrongCount}<br>
+            📊 <strong>შედეგი:</strong> ${Math.round((correctCount / totalCount) * 100)}%
+        `;
+
+        document.getElementById('resultsText').innerHTML = resultsText;
+        document.getElementById('resultsModal').classList.remove('hidden');
+    }
+
+    function closeResultsModal() {
+        document.getElementById('resultsModal').classList.add('hidden');
+        openExamsModal();
+    }
+</script>
+
+</body>
+</html>
